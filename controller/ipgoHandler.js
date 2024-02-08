@@ -3,11 +3,28 @@ const app = express();
 const bodyParser = require('body-parser');
 const mysql = require('mysql');
 
+/*
 const product_db = mysql.createConnection({
-  host: 'localhost',
-  user: 'wms',
-  password: 'wms',
-  database: 'wms_project'
+  host: process.env.DATABASE_HOST,
+  user: process.env.DATABASE_USERNAME,
+  password: process.env.DATABASE_PASSWORD,
+  database: process.env.DATABASE_NAME
+});
+*/
+
+const product_db = mysql.createConnection({
+  host: process.env.DATABASE_HOST,
+  user: process.env.DATABASE_USERNAME,
+  password: process.env.DATABASE_PASSWORD,
+  database: process.env.DATABASE_NAME
+});
+
+
+product_db.connect((err) => {
+  if (err) {
+    throw err;
+  }
+  console.log('ipgo_controller _ MySQL database connected');
 });
 
 /*
@@ -62,12 +79,70 @@ const handleIpgoRequest = async (req, res) => {
 
     try {
       for (const obj of receivedDataArray) {
-        const { name, category, quantity, mfg, exp } = obj;
+        const { productcode, quantity, mfg, exp } = obj;
 
+/*
+        // 받은 상품코드 값으로 어떤 상품인지 확인하는 데이터베이스 쿼리
+        const searchresult = await new Promise((resolve, reject) => {
+          const values = [productcode, quantity, mfg, exp];
+
+          const searchquery = 
+          `
+          SELECT *
+          FROM product_master
+          WHERE product_code = '${values[0]}';
+          `;
+          
+          product_db.query(searchquery, (err, result) => {
+            if (err) {
+              console.error('MySQL 쿼리 오류:', err);
+              reject(err); // 오류 발생 시 Promise를 거부
+            } else {
+              console.log('조회 성공 : ', result);
+              resolve(result); // 성공 시 Promise를 이행
+            }
+          });
+        });*/
+
+        const searchResult = await new Promise((resolve, reject) => {
+          const searchquery = `SELECT * FROM product_master WHERE product_code = ?`;
+          product_db.query(searchquery, [productcode], (err, result) => {
+            if (err) {
+              console.error('MySQL 쿼리 오류:', err);
+              reject(err);
+            } else {
+              console.log('조회 성공:', result);
+              resolve(result[0]); // 첫 번째 결과만 사용
+            }
+          });
+        });
+
+              // mfg와 exp가 null인 경우 임의의 날짜 데이터로 대체
+      const currentDate = new Date().toISOString().split('T')[0];
+      const formattedMfg = mfg || currentDate;
+      const formattedExp = exp || currentDate;
+
+              // 조회한 결과를 사용하여 데이터베이스 삽입 쿼리 실행
+      const insertResult = await new Promise((resolve, reject) => {
+        const query = `INSERT INTO product (product_code, bar_code, name, weight, category, quantity, mfg, exp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+        const values = [searchResult.product_code, searchResult.bar_code, searchResult.name, searchResult.weight, searchResult.category_code, quantity, formattedMfg, formattedExp];
+        product_db.query(query, values, (err, result) => {
+          if (err) {
+            console.error('MySQL 쿼리 오류:', err);
+            reject(err);
+          } else {
+            console.log('데이터가 성공적으로 삽입되었습니다.');
+            resolve(result);
+          }
+        });
+      });
+
+
+        /*
         // 데이터베이스 쿼리를 비동기적으로 실행
         const result = await new Promise((resolve, reject) => {
-          const query = `INSERT INTO product (productname, category, quantity, mfg, exp) VALUES (?, ?, ?, ?, ?)`;
-          const values = [name, category, quantity, mfg, exp];
+          const query = `INSERT INTO product (product_code, bar_code, productname, category, quantity, weight, mfg, exp) VALUES (?, ?, ?, ?, ?)`;
+          const values = result;
           product_db.query(query, values, (err, result) => {
             if (err) {
               console.error('MySQL 쿼리 오류:', err);
@@ -78,6 +153,7 @@ const handleIpgoRequest = async (req, res) => {
             }
           });
         });
+        */
 
         insertionResults.push({ success: true });
       }

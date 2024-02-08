@@ -3,19 +3,29 @@ const app = express();
 const bodyParser = require('body-parser');
 const mysql = require('mysql');
 
+/*
 const product_db = mysql.createConnection({
-  host: 'localhost',
-  user: 'wms',
-  password: 'wms',
-  database: 'wms_project'
+  host: 'wms.culku1befhgr.ap-northeast-2.rds.amazonaws.com',
+  user: 'vkhkhv',
+  password: '12345678',
+  database: 'wms_database'
 });
+*/
+
+const product_db = mysql.createConnection({
+  host: 'wms.culku1befhgr.ap-northeast-2.rds.amazonaws.com',
+  user: 'vkhkhv',
+  password: '12345678',
+  database: 'wms_database'
+});
+
 
 // 데이터베이스 연결
 product_db.connect((err) => {
   if (err) {
     throw err;
   }
-  console.log('getstatus controller _ MySQL database connected');
+  console.log('get_product_master controller _ MySQL database connected');
 });
 
 
