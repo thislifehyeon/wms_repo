@@ -4,11 +4,13 @@ const bodyParser = require('body-parser');
 const mysql = require('mysql');
 
 const product_db = mysql.createConnection({
-  host: 'localhost',
-  user: 'wms',
-  password: 'wms',
-  database: 'wms_project'
+  host: 'wms.culku1befhgr.ap-northeast-2.rds.amazonaws.com',
+  user: 'vkhkhv',
+  password: '12345678',
+  database: 'wms_database'
 });
+
+
 
 // 데이터베이스 연결
 product_db.connect((err) => {
@@ -22,11 +24,11 @@ product_db.connect((err) => {
 const getStatus = async (req, res) => {
   const selectAllquery = 'SELECT * FROM product'; // 쿼리 저장
   const received = req.body;
-  console.log('Received data from client:');
+  console.log('Received product status data from client:');
 
   product_db.query(selectAllquery, (err, results) =>{
     if(err){ //에러 
-      res.status(500).send('getstatus controller, select all query err');
+      res.status(500).send('getstatus controller, select all query err'); 
       return;
     }
     res.json(results);
