@@ -3,14 +3,6 @@ const app = express();
 const bodyParser = require('body-parser');
 const mysql = require('mysql');
 
-/*
-const product_db = mysql.createConnection({
-  host: process.env.DATABASE_HOST,
-  user: process.env.DATABASE_USERNAME,
-  password: process.env.DATABASE_PASSWORD,
-  database: process.env.DATABASE_NAME
-});
-*/
 
 const product_db = mysql.createConnection({
   host: process.env.DATABASE_HOST,
@@ -64,9 +56,8 @@ app.post('/api/ipgo', (req, res) => {
       });
 
 });
-폐기한 이유 : forEach 루프 내에서 비동기적으로 실행되는 데이터베이스 쿼리의 콜백 함수에서 insertionResults에 데이터를 추가하는 문제가 있습니다. 
-이러한 상황에서는 forEach 대신에 for...of 루프를 사용하여 해결할 수 있습니다. for...of 루프는 비동기 작업의 완료를 기다려주는 더 좋은 방법입니다. 
-아래 코드는 for...of 루프를 사용한 수정된 버전입니다.
+폐기한 이유 : forEach 루프 내에서 비동기적으로 실행되는 데이터베이스 쿼리의 콜백 함수에서 insertionResults에 데이터를 추가하는 문제 발생. 
+이러한 상황에서는 forEach 대신에 for...of 루프를 사용하여 해결 for...of 루프는 비동기 작업의 완료를 기다려주는 더 좋은 방법
 */
 
 const handleIpgoRequest = async (req, res) => {
@@ -81,29 +72,8 @@ const handleIpgoRequest = async (req, res) => {
       for (const obj of receivedDataArray) {
         const { productcode, quantity, mfg, exp } = obj;
 
-/*
+
         // 받은 상품코드 값으로 어떤 상품인지 확인하는 데이터베이스 쿼리
-        const searchresult = await new Promise((resolve, reject) => {
-          const values = [productcode, quantity, mfg, exp];
-
-          const searchquery = 
-          `
-          SELECT *
-          FROM product_master
-          WHERE product_code = '${values[0]}';
-          `;
-          
-          product_db.query(searchquery, (err, result) => {
-            if (err) {
-              console.error('MySQL 쿼리 오류:', err);
-              reject(err); // 오류 발생 시 Promise를 거부
-            } else {
-              console.log('조회 성공 : ', result);
-              resolve(result); // 성공 시 Promise를 이행
-            }
-          });
-        });*/
-
         const searchResult = await new Promise((resolve, reject) => {
           const searchquery = `SELECT * FROM product_master WHERE product_code = ?`;
           product_db.query(searchquery, [productcode], (err, result) => {
@@ -117,43 +87,59 @@ const handleIpgoRequest = async (req, res) => {
           });
         });
 
-              // mfg와 exp가 null인 경우 임의의 날짜 데이터로 대체
+              // mfg와 exp가 null인 경우 임의의 날짜 데이터로 대체(오늘)
       const currentDate = new Date().toISOString().split('T')[0];
       const formattedMfg = mfg || currentDate;
       const formattedExp = exp || currentDate;
 
-              // 조회한 결과를 사용하여 데이터베이스 삽입 쿼리 실행
-      const insertResult = await new Promise((resolve, reject) => {
-        const query = `INSERT INTO product (product_code, bar_code, name, weight, category, quantity, mfg, exp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
-        const values = [searchResult.product_code, searchResult.bar_code, searchResult.name, searchResult.weight, searchResult.category_code, quantity, formattedMfg, formattedExp];
-        product_db.query(query, values, (err, result) => {
+      // 입력된 PK 값으로 이미 존재하는 레코드를 검색
+      const ProductSearchResult = await new Promise((resolve, reject) => {
+        const productsearchquery = 
+        `SELECT *
+        FROM product
+        WHERE product_code = ? AND mfg = ? AND exp = ? AND location = ?`;
+        product_db.query(productsearchquery, [productcode, formattedMfg, formattedExp, 'RCV'], (err, result) => {
           if (err) {
             console.error('MySQL 쿼리 오류:', err);
             reject(err);
           } else {
-            console.log('데이터가 성공적으로 삽입되었습니다.');
-            resolve(result);
+            console.log('PK로 조회 성공:', result[0]);
+            resolve(result[0]); // 첫 번째 결과만 사용
           }
         });
       });
 
 
-        /*
-        // 데이터베이스 쿼리를 비동기적으로 실행
-        const result = await new Promise((resolve, reject) => {
-          const query = `INSERT INTO product (product_code, bar_code, productname, category, quantity, weight, mfg, exp) VALUES (?, ?, ?, ?, ?)`;
-          const values = result;
-          product_db.query(query, values, (err, result) => {
-            if (err) {
-              console.error('MySQL 쿼리 오류:', err);
-              reject(err); // 오류 발생 시 Promise를 거부
-            } else {
-              console.log('데이터가 성공적으로 삽입되었습니다.');
-              resolve(result); // 성공 시 Promise를 이행
-            }
-          });
+      if (ProductSearchResult) {
+        // 검색 결과가 있으면 해당 제품의 수량을 업데이트
+        const updatedQuantity = ProductSearchResult.quantity + Number(quantity); // 기존 수량에 추가할 수량을 더함
+        const updateQuery = `
+          UPDATE product
+          SET quantity = ?
+          WHERE product_code = ? AND mfg = ? AND exp = ?
+        `;
+        product_db.query(updateQuery, [updatedQuantity, productcode, formattedMfg, formattedExp], (err, result) => {
+          if (err) {
+            console.error('MySQL 쿼리 오류:', err);
+          } else {
+            console.log('수량 업데이트 성공');
+          }
         });
-        */
+      } else {
+        // 검색 결과가 없으면 새로운 제품을 추가
+        const insertQuery = ` 
+          INSERT INTO product (product_code, bar_code, name, weight, category, quantity, mfg, exp, location)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        product_db.query(insertQuery, [searchResult.product_code, searchResult.bar_code, searchResult.name, searchResult.weight, searchResult.category_code, quantity, formattedMfg, formattedExp, 'RCV'], (err, result) => {
+          if (err) {
+            console.error('MySQL 쿼리 오류:', err);
+          } else {
+            console.log('새로운 제품 추가 성공');
+          }
+        });
+      }
+
 
         insertionResults.push({ success: true });
       }
