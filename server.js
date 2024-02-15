@@ -15,11 +15,15 @@ const { getStatus } = require('./controller/getstatus')
 const { getProductmaster } = require('./controller/get_product_master')
 const { product_truncate } = require('./controller/product_truncate')
 const { search_code } = require('./controller/searchcode')
+const { search_code_stock } = require('./controller/searchcode_stock')
+const { exp_change } = require('./controller/exp_change')
 
 
 
 app.post("/api/ipgo", handleIpgoRequest);
 app.post("/api/searchcode", search_code);
+app.post("/api/searchcode_stock", search_code_stock);
+app.post("/api/exp_change", exp_change);
 
 
 app.get('/api/getstatus', getStatus);
