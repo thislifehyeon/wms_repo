@@ -3,11 +3,12 @@ const app = express();
 const bodyParser = require('body-parser');
 const mysql = require('mysql');
 
+
 const product_db = mysql.createConnection({
-  host: 'wms.culku1befhgr.ap-northeast-2.rds.amazonaws.com',
-  user: 'vkhkhv',
-  password: '12345678',
-  database: 'wms_database'
+  host: process.env.DATABASE_HOST,
+  user: process.env.DATABASE_USERNAME,
+  password: process.env.DATABASE_PASSWORD,
+  database: process.env.DATABASE_NAME
 });
 
 
