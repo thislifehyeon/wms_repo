@@ -17,6 +17,7 @@ const { product_truncate } = require('./controller/product_truncate')
 const { search_code } = require('./controller/searchcode')
 const { search_code_stock } = require('./controller/searchcode_stock')
 const { exp_change } = require('./controller/exp_change')
+const { getlocation } = require('./controller/getlocation')
 
 
 
@@ -29,6 +30,7 @@ app.post("/api/exp_change", exp_change);
 app.get('/api/getstatus', getStatus);
 app.get('/api/product_truncate', product_truncate);
 app.get('/api/getProductMaster', getProductmaster);
+app.get('/api/getlocation', getlocation);
 
 
 app.get('/', (req, res) => {
