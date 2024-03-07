@@ -11,14 +11,6 @@ const product_db = mysql.createConnection({
   database: process.env.DATABASE_NAME
 });
 
-/*
-const product_db = mysql.createConnection({
-  host: 'wms.culku1befhgr.ap-northeast-2.rds.amazonaws.com',
-  user: 'vkhkhv',
-  password: '12345678',
-  database: 'wms_database'
-});
-*/
 
 // 데이터베이스 연결
 product_db.connect((err) => {
