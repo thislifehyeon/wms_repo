@@ -21,7 +21,9 @@ const { search_code_stock } = require('./controller/searchcode_stock')
 const { exp_change } = require('./controller/exp_change')
 const { getlocation } = require('./controller/getlocation')
 const { visit } = require('./controller/visit')
-const { location } = require('./controller/location')
+const { update_location } = require('./controller/update_Location')
+const { delete_location } = require('./controller/delete_Location')
+const { create_location } = require('./controller/create_Location')
 
 
 app.post("/api/visit", visit);
@@ -30,13 +32,15 @@ app.post("/api/ipgo", handleIpgoRequest);
 app.post("/api/searchcode", search_code);
 app.post("/api/searchcode_stock", search_code_stock);
 app.post("/api/exp_change", exp_change);
-app.post("/api/location", location);
-
+app.post("/api/update_location", update_location);
+app.post("/api/create_location", create_location);
 
 app.get('/api/getstatus', getStatus);
 app.get('/api/product_truncate', product_truncate);
 app.get('/api/getProductMaster', getProductmaster);
 app.get('/api/getlocation', getlocation);
+
+app.delete('/api/delete_location/:code', delete_location);
 
 
 app.get('/', (req, res) => {
