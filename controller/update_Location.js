@@ -16,11 +16,11 @@ product_db.connect((err) => {
   if (err) {
     throw err;
   }
-  console.log('location_controller _ MySQL database connected');
+  console.log('update_location_controller _ MySQL database connected');
 });
 
 
-const location = async (req, res) => {
+const update_location = async (req, res) => {
   try {
       const editLocation = req.body;
 
@@ -140,4 +140,4 @@ const insertProduct = (savedProduct) => {
 };
 */
 
-module.exports = { location };
+module.exports = { update_location };
